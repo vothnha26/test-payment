@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: noithat-payment
+    env: docker
+    rootDir: quan-ly-noi-that-backend
+    dockerfilePath: Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: SEPAY_API_URL
+        value: https://my.sepay.vn/userapi
+      - key: SEPAY_API_KEY
+        sync: false
+      - key: SEPAY_ACCOUNT_NUMBER
+        sync: false
+      - key: SEPAY_ACCOUNT_NAME
+        sync: false
+      - key: SEPAY_BIN
+        sync: false
+      - key: SEPAY_WEBHOOK_SECRET
+        sync: false
