@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán SePay - VNPay QR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .success-badge {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .qr-section {
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 3px dashed #ddd;
+            display: inline-block;
+        }
+
+        .qr-image {
+            width: 300px;
+            height: 300px;
+            object-fit: contain;
+        }
+
+        .amount-display {
+            margin-top: 15px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .checking-status {
+            color: #666;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            margin-top: 25px;
+        }
+
+        .instructions h4 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #c33;
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💳 Thanh Toán SePay - VNPay QR</h1>
+
+        <!-- Form tạo thanh toán -->
+        <form id="paymentForm">
+            <div class="form-group">
+                <label>Số tiền (VNĐ) *</label>
+                <input type="number" id="amount" required min="1000" placeholder="Ví dụ: 50000">
+            </div>
+
+            <div class="form-group">
+                <label>Mô tả</label>
+                <input type="text" id="description" placeholder="Thanh toán đơn hàng">
+            </div>
+
+            <div class="form-group">
+                <label>Họ tên *</label>
+                <input type="text" id="customerName" required placeholder="Nguyễn Văn A">
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="customerEmail" placeholder="email@example.com">
+            </div>
+
+            <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="tel" id="customerPhone" placeholder="0123456789">
+            </div>
+
+            <div id="errorMsg" class="error hidden"></div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn">Tạo thanh toán</button>
+        </form>
+
+        <!-- Kết quả thanh toán -->
+        <div id="result" class="result">
+            <div class="success-badge">
+                <h2>✨ Thanh toán đã được tạo!</h2>
+                <p>Mã đơn: <strong id="orderId"></strong></p>
+            </div>
+
+            <div class="qr-section">
+                <h3>Quét mã QR để thanh toán</h3>
+                <div class="qr-container">
+                    <img id="qrImage" class="qr-image" alt="QR Code thanh toán">
+                </div>
+                <div class="amount-display">
+                    <p>Số tiền: <strong id="amountDisplay"></strong> VNĐ</p>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <span id="statusBadge" class="status-badge status-pending">PENDING</span>
+                <div id="checkingStatus" class="checking-status hidden">
+                    <span class="spinner"></span>
+                    Đang tự động kiểm tra thanh toán...
+                </div>
+            </div>
+
+            <button onclick="checkStatus()" class="btn btn-primary">🔍 Kiểm tra trạng thái</button>
+            <button onclick="testWebhook()" class="btn btn-primary" style="background: #28a745; margin-top: 10px;">🧪 Test Webhook (Giả lập thanh toán)</button>
+            <button onclick="resetForm()" class="btn btn-secondary">🔄 Tạo thanh toán mới</button>
+
+            <div class="instructions">
+                <h4>📝 Hướng dẫn:</h4>
+                <ol>
+                    <li>Mở app ngân hàng hỗ trợ VNPay QR</li>
+                    <li>Chọn chức năng quét QR code</li>
+                    <li>Quét mã QR phía trên</li>
+                    <li>Số tiền sẽ tự động điền đúng</li>
+                    <li>Xác nhận thanh toán</li>
+                    <li>Hệ thống sẽ tự động cập nhật trạng thái</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/payment';
+        let currentOrderId = null;
+        let checkInterval = null;
+
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Đang xử lý...';
+            
+            hideError();
+
+            try {
+                const response = await fetch(`${API_URL}/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: parseFloat(document.getElementById('amount').value),
+                        description: document.getElementById('description').value,
+                        customerName: document.getElementById('customerName').value,
+                        customerEmail: document.getElementById('customerEmail').value,
+                        customerPhone: document.getElementById('customerPhone').value
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Không thể tạo thanh toán');
+                }
+
+                const data = await response.json();
+                displayPaymentResult(data);
+                startAutoCheck(data.orderId);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Tạo thanh toán';
+            }
+        });
+
+        function displayPaymentResult(data) {
+            currentOrderId = data.orderId;
+            
+            document.getElementById('orderId').textContent = data.orderId;
+            document.getElementById('qrImage').src = data.qrCode;
+            document.getElementById('amountDisplay').textContent = data.amount.toLocaleString('vi-VN');
+            updateStatus(data.status);
+            
+            document.getElementById('paymentForm').classList.add('hidden');
+            document.getElementById('result').classList.add('show');
+        }
+
+        function startAutoCheck(orderId) {
+            document.getElementById('checkingStatus').classList.remove('hidden');
+            
+            checkInterval = setInterval(async () => {
+                await checkStatus(true);
+            }, 3000);
+
+            // Dừng sau 15 phút
+            setTimeout(() => {
+                stopAutoCheck();
+            }, 15 * 60 * 1000);
+        }
+
+        function stopAutoCheck() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+            }
+            document.getElementById('checkingStatus').classList.add('hidden');
+        }
+
+        async function checkStatus(silent = false) {
+            if (!currentOrderId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/status/${currentOrderId}`);
+                const data = await response.json();
+                
+                updateStatus(data.status);
+
+                if (data.status === 'COMPLETED') {
+                    stopAutoCheck();
+                    if (!silent) alert('✅ Thanh toán đã hoàn thành!');
+                } else if (data.status === 'FAILED') {
+                    stopAutoCheck();
+                    if (!silent) alert('❌ Thanh toán thất bại!');
+                } else if (!silent) {
+                    alert(`Trạng thái: ${data.status}`);
+                }
+            } catch (error) {
+                if (!silent) alert('Có lỗi khi kiểm tra trạng thái');
+            }
+        }
+
+        function updateStatus(status) {
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = status;
+            badge.className = 'status-badge status-' + status.toLowerCase();
+        }
+
+        function resetForm() {
+            stopAutoCheck();
+            currentOrderId = null;
+            
+            document.getElementById('paymentForm').reset();
+            document.getElementById('paymentForm').classList.remove('hidden');
+            document.getElementById('result').classList.remove('show');
+            hideError();
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMsg').classList.add('hidden');
+        }
+
+        async function testWebhook() {
+            if (!currentOrderId) return;
+
+            if (!confirm('Bạn muốn giả lập thanh toán thành công cho đơn hàng này?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/test-webhook/${currentOrderId}`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    alert('✅ Đã giả lập webhook thành công! Đang cập nhật trạng thái...');
+                    setTimeout(() => checkStatus(), 1000);
+                } else {
+                    alert('❌ Có lỗi khi test webhook');
+                }
+            } catch (error) {
+                alert('❌ Có lỗi: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
